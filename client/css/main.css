@@ -1,0 +1,67 @@
+#book-navigator {
+    z-index: 1000;
+    left: 0px;
+    width: 30vw;
+    top: 50px;
+    height: calc(100vh - 50px);
+    overflow-y: scroll;
+    float: left;
+    position: fixed;
+    background-color: #f7f7f7;
+    border-right: solid;
+    border-right-color: #999999;
+    border-right-width: thick;
+}
+
+#bookfinder{
+    overflow-y: scroll;
+}
+
+
+#projectfinder{
+    overflow-y: scroll;
+    border-top: solid;
+    border-top-color: #999999;
+    border-top-width: thick;
+    display: none;
+}
+
+
+#original {
+    z-index: 1000;
+    position: fixed;
+    left: 30vw;
+    top: 50px;
+    width: calc(100vw - 30vw );
+    height: calc(100vh - 50vh - 25px);
+    overflow-y: auto;
+    background-color: #f7f7f7;
+    border-bottom: solid;
+    border-bottom-color: #999999;
+    border-bottom-width: thick;
+}
+
+#translated{
+    z-index: 1000;
+    left: 30vw;
+    top: calc(100vh - 50vh - 25px + 50px);
+    width: calc(100vw - 30vw );
+    height: calc(100vh - 50vh - 25px);
+    overflow-y: scroll;
+    background-color: #f7f7f7;
+    position: fixed;
+}
+
+#sidebar{
+    position: fixed;
+    right: 0px;
+    top:50px;
+    z-index: 1000;
+    width: 150px;
+    height: calc(100vh - 50px);
+    overflow-y: scroll;
+    bottom: 0px;
+    float: right;
+    display: none;
+}
+

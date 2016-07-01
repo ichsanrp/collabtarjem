@@ -6,13 +6,15 @@ var compression = require('compression');
 var io   = require('socket.io');
 var request     = require('request');
 var fs          = require('fs');
-
+var config = require('./config');
 var httpRouter = express();
+
 httpRouter.use(compression());
 httpRouter.use(bodyParser.json());
 httpRouter.use(bodyParser.urlencoded({ extended: true }));
-httpRouter.use('/',express.static('msTranslatorClient'));
+httpRouter.use('/',express.static('client'));
 var api = require('./api')(httpRouter);
+
 
 var httpServer = http.createServer(httpRouter);
 var socket = io(httpServer);
@@ -28,6 +30,7 @@ executeDb = function(handler){
 };
 
 
-httpServer.listen(8080, function(){
+
+httpServer.listen(config.port, function(){
 
 });
