@@ -1,0 +1,39 @@
+<div class="modal fade" id="upload_kitab_panel" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Upload Kitab</h4>
+            </div>
+            <div class="modal-body" id="upload_form">
+                <div id="upload_drop_zone" style="cursor: copy;display: none;background-color: #9acfea; opacity:0.3;position: absolute;top: 0px;left: 0px;height: 100%;width:100%;border:5px dashed #CCC;z-index: 100000;vertical-align: middle;text-align: center">
+                    <h4 style="text-align: center;opacity: 1;top: 46%;left: 44%;position: absolute;color: #000000">Drop Here</h4>
+                </div>
+                <form>
+                    <div class="form-group">
+                        <label for="shamela_url">Get from shamela.ws url </label>
+                        <input type="text" class="form-control" aria-label="..." id="shamela_url" placeholder="e.g. http://shamela.ws/index.php/book/14075">
+                    </div>
+                </form>
+
+                <form>
+                    <div class="form-group">
+                        <label for="shamela_url">Get from Computer</label>
+                        <div class="input-group">
+                            <input type="file" id="theFile" style="display: none" />
+                            <input type="text" class="form-control" id="filename" placeholder="filename">
+                            <div class="input-group-btn">
+                                <button type="button" class="btn btn-primary" aria-label="Italic" id="show_get_file"><span class="fa fa-desktop"></span></button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal" >Upload</button>
+            </div>
+        </div>
+    </div>
+</div>

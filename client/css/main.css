@@ -3,7 +3,6 @@
     left: 0px;
     width: 30vw;
     top: 50px;
-    height: calc(100vh - 50px);
     overflow-y: scroll;
     float: left;
     position: fixed;
@@ -11,14 +10,17 @@
     border-right: solid;
     border-right-color: #999999;
     border-right-width: thick;
+    height:calc( 100vh - 50px)
 }
 
 #bookfinder{
     overflow-y: scroll;
+    height:calc( 100vh - 50vh - 25px - 58px );
 }
 
 
 #projectfinder{
+    height:calc( 100vh - 50vh - 25px - 58px );
     overflow-y: scroll;
     border-top: solid;
     border-top-color: #999999;
