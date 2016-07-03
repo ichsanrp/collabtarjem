@@ -13,6 +13,16 @@ var msTranslatorClient = new MsTranslator({
     , client_secret: "9uDMJOyZd2qF9k+jVrNAvVn+dYGDFoWgXP7LiKZpOiA="
 }, true);
 
+var MongoClient = require('mongodb').MongoClient;
+executeDb = function(handler){
+    MongoClient.connect(config.db, function(err, db) {
+        if(!err)
+            handler(db,function(){
+                db.close();
+            });
+    });
+};
+
 function checksum (str, algorithm, encoding) {
     return crypto
         .createHash(algorithm || 'md5')
@@ -59,7 +69,7 @@ var exportBookMetadata = function (contentdescriptor) {
 var exportBookManifest = function (zipfile,contentDescriptor,bookInfo) {
 
     return new Promise(function (resolve, reject) {
-        var maxTranslate = 3;
+        var maxTranslate = -1;
         var currTranslate = 0;
 
         var manifest = contentDescriptor.package.manifest[0];
@@ -89,36 +99,37 @@ var exportBookManifest = function (zipfile,contentDescriptor,bookInfo) {
             //check if kalimat already has translation
             if(kalimat.translation[to] == null || kalimat.translation[to] == undefined){
                 msTranslatorClient.translate(params, function(err, translation) {
+                    console.log(translation);
+                    if(!err){
+                        var newid = objectId();
+                        var translateTranslator = kalimat.translation;
+                        translateTranslator[kalimat.language] = kalimat._id;
+                        translateTranslator[to] = newid;
 
-
-                    var newid = objectId();
-                    var translateTranslator = kalimat.translation;
-                    translateTranslator[kalimat.language] = kalimat._id;
-                    translateTranslator[to] = newid;
-
-                    executeDb(function (db, done) {
-                        db.collection('kalimat').insertOne({
-                            _id:newid,
-                            language:to,
-                            text:translation,
-                            page:kalimat.page,
-                            book:kalimat.book,
-                            identity:checksum(translation, 'sha1'),
-                            translation:translateTranslator
-                        },function(err,result){
-                            done();
-                        });
-                    });
-
-                    executeDb(function (db, done) {
-                        db.collection('kalimat').updateOne(
-                            {_id: objectId(kalimat._id)},
-                            {$set: {translation: translateTranslator}},
-                            function(err,result){
+                        executeDb(function (db, done) {
+                            db.collection('kalimat').insertOne({
+                                _id:newid,
+                                language:to,
+                                text:translation,
+                                page:kalimat.page,
+                                book:kalimat.book,
+                                identity:checksum(translation, 'sha1'),
+                                translation:translateTranslator
+                            },function(err,result){
                                 done();
-                            }
-                        );
-                    });
+                            });
+                        });
+
+                        executeDb(function (db, done) {
+                            db.collection('kalimat').updateOne(
+                                {_id: objectId(kalimat._id)},
+                                {$set: {translation: translateTranslator}},
+                                function(err,result){
+                                    done();
+                                }
+                            );
+                        });
+                    }
                 });
             }
         };
@@ -228,6 +239,7 @@ var exportBookManifest = function (zipfile,contentDescriptor,bookInfo) {
 module.exports = epub_exporter;
 
 function epub_exporter(){
+    console.log('call')
     var api = {};
 
     var readBookInfo = function (zipfile) {
@@ -238,10 +250,10 @@ function epub_exporter(){
                 contentdescriptor = rtfile.rootfile[0].$['full-path'];
                 var dir = rtfile.rootfile[0].$['full-path'].split('/');
                 rootDir = dir[0];
+
             });
         });
         contentdescriptor = zipfile.readAsText(contentdescriptor);
-
         xml(contentdescriptor, function (err, result) {
             result.rootDir = rootDir;
             exportBookMetadata(result).then(function (metadata) {
@@ -255,6 +267,7 @@ function epub_exporter(){
     };
 
     api.exportAll = function(){
+
         fs.readdir(path.join(__dirname, 'uploaded'), function (err, files) {
             files.forEach(function (file) {
                 var filepath = path.join(__dirname, 'uploaded', file);

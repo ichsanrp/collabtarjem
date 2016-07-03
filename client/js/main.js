@@ -69,24 +69,6 @@ $(function () {
             })
         });
 
-        $('#bookfinder').children('.media')
-            .css('cursor', 'pointer')
-            .css('margin-top', '0px')
-            .css('padding-top', '7px')
-            .css('padding-bottom', '7px')
-            .css('padding-left', '5px')
-            .css('padding-right', '5px')
-            .click(function (e) {
-                $('#bookfinder').children('.media').removeClass('bg-warning');
-                $(this).addClass('bg-warning');
-            })
-            .mouseover(function () {
-                $(this).addClass('bg-info')
-            })
-            .mouseleave(function () {
-                $(this).removeClass('bg-info')
-            });
-
 
         //javascript for upload kitab
 
