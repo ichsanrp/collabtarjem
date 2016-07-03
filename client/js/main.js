@@ -10,7 +10,7 @@ $(function () {
             template:'<div class="tooltip" style="width: 100px" role="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner"></div></div>'
         });
 
-        function showElement(selector,inAnimation,outAnimation,duration,callback){
+        window.showElement = function(selector,inAnimation,outAnimation,duration,callback){
             var $element = $(selector);
 
             var hide = function()
