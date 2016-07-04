@@ -20,6 +20,8 @@
             this.loaded = 0;
             this.handler = [];
             this.readyCalled = false;
+            this.headerScript = {};
+            this.scanJsHeader();
             this.convert();
         },
 
@@ -31,12 +33,34 @@
             })
         },
 
+        scanJsHeader:function(){
+            var self = this;
+            var allscript = $('script');
+            allscript.each(function(script){
+                self.headerScript[$(this).attr('src')] = true
+            });
+        },
+
+        attachJs : function(elemnt){
+            var self = this;
+            if(elemnt.length > 0){
+                elemnt.each(function(require){
+                    if(!self.headerScript.hasOwnProperty($(this).attr('src'))){
+                        self.headerScript[$(this).attr('src')] = true;
+                        $.getScript($(this).attr('src'))
+                    }
+                });
+            }
+        },
         replace : function(elemnt){
             var self = this;
             $.get(elemnt.attr('src'), function (data) {
                 var html = $.parseHTML(data);
                 var tempdom = $('<output>').append(html);
                 var part = $('partial',tempdom);
+                //searching for require
+                var require = $('require',tempdom);
+                self.attachJs(require)
                 elemnt.replaceWith(html);
                 if(part.length > 0){
                     self.size += part.length;

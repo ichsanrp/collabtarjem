@@ -1,3 +1,4 @@
+<require src="js/upload_kitab.js"/>
 <div class="modal fade" id="upload_kitab_panel" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -10,29 +11,42 @@
                 <div id="upload_drop_zone" style="cursor: copy;display: none;background-color: #9acfea; opacity:0.3;position: absolute;top: 0px;left: 0px;height: 100%;width:100%;border:5px dashed #CCC;z-index: 100000;vertical-align: middle;text-align: center">
                     <h4 style="text-align: center;opacity: 1;top: 46%;left: 44%;position: absolute;color: #000000">Drop Here</h4>
                 </div>
-                <form>
+                <div>
                     <div class="form-group">
                         <label for="shamela_url">Get from shamela.ws url </label>
                         <input type="text" class="form-control" aria-label="..." id="shamela_url" placeholder="e.g. http://shamela.ws/index.php/book/14075">
                     </div>
-                </form>
+                    <div id="upload_shamela_error" >
 
-                <form>
+                    </div>
+                </div>
+
+                <div>
                     <div class="form-group">
                         <label for="shamela_url">Get from Computer</label>
-                        <div class="input-group">
-                            <input type="file" id="theFile" style="display: none" />
+                        <div class="input-group" style="margin-bottom: 10px">
+                            <form id="upload_form_shadow" method="post" name="file_upload" enctype="multipart/form-data" style="display: none" >
+                                <input type="file" id="theFile" name="epub" style="display: none"/>
+                            </form>
                             <input type="text" class="form-control" id="filename" placeholder="filename">
                             <div class="input-group-btn">
-                                <button type="button" class="btn btn-primary" aria-label="Italic" id="show_get_file"><span class="fa fa-desktop"></span></button>
+                                <button disabled="disabled" type="button" class="btn btn-primary" aria-label="Italic" id="upload_file"><span class="fa fa-upload"></span></button>
+                            </div>
+                        </div>
+                        <div id="upload_error" >
+
+                        </div>
+                        <div class="progress" style="display: none" id="upload_progress">
+                            <div class="progress-bar progress-bar-warning progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+                                <span class="sr-only">60% Complete (warning)</span>
                             </div>
                         </div>
                     </div>
-                </form>
+                </div>
 
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-dismiss="modal" >Upload</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal" >Cancel</button>
             </div>
         </div>
     </div>

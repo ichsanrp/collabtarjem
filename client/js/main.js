@@ -70,57 +70,7 @@ $(function () {
         });
 
 
-        //javascript for upload kitab
 
-        $('#login-popup').click(function(){
-            $('#login_panel').modal();
-        });
-        $('#show_upload_kitab').click(function(){
-            $('#upload_kitab_panel').modal();
-        });
-        $('#filename, #show_get_file').click(function(){
-            var evt = document.createEvent("MouseEvents");
-            evt.initEvent("click", true, false);
-            document.getElementById('theFile').dispatchEvent(evt);
-        });
-
-        $('#theFile').change(function(){
-            $('#filename').val($(this).val())
-        });
-
-
-
-        $('#upload_form').on(
-            'dragover',
-            function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                $('#upload_drop_zone').css('display','block');
-            }
-        );
-
-        $('#upload_form').on(
-            'dragenter',
-            function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-            }
-        );
-
-        $('#upload_form').on(
-            'drop',
-            function(e){
-                if(e.originalEvent.dataTransfer){
-                    if(e.originalEvent.dataTransfer.files.length) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log(e.originalEvent.dataTransfer.files);
-                        $('#upload_drop_zone').css('display','none');
-                    }
-                }
-            }
-        );
     });
 
 });

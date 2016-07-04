@@ -154,30 +154,32 @@ var exportBookManifest = function (zipfile,contentDescriptor,bookInfo) {
                                 throw err;
                             }
                             else {
-                                db.collection('kalimat').find({_id: objectId(result.insertedId)}).limit(1).next(function (err, doc) {
-
-                                    var params = {
-                                        text: doc.text
-                                        , from: 'ar'
-                                        , to: 'id'
-                                    };
-                                    //now we call microsoft translator to translate arabic to indonesia
-                                    if(maxTranslate != -1){
-                                        if(currTranslate < maxTranslate){
-                                            currTranslate ++;
-                                            insertTranslation(doc,'id');
-                                        }
-                                    }else{
-                                        insertTranslation(doc,'id');
-                                    }
-
-                                    cb(doc);
-                                    done();
-                                })
+                                //disabling auto translate
+                                //db.collection('kalimat').find({_id: objectId(result.insertedId)}).limit(1).next(function (err, doc) {
+                                //
+                                //    var params = {
+                                //        text: doc.text
+                                //        , from: 'ar'
+                                //        , to: 'id'
+                                //    };
+                                //    //now we call microsoft translator to translate arabic to indonesia
+                                //    if(maxTranslate != -1){
+                                //        if(currTranslate < maxTranslate){
+                                //            currTranslate ++;
+                                //            insertTranslation(doc,'id');
+                                //        }
+                                //    }else{
+                                //        insertTranslation(doc,'id');
+                                //    }
+                                //
+                                //    cb(doc);
+                                //    done();
+                                //})
+                                done();
                             }
                         })
                     } else {
-                        insertTranslation(doc, 'id');
+                        //insertTranslation(doc, 'id');
                         done();
                     }
                 });
@@ -212,10 +214,11 @@ var exportBookManifest = function (zipfile,contentDescriptor,bookInfo) {
                                         contents.forEach(function (kalimat) {
                                             insertKalimat(kalimat, bookInfo, newPage, function () {
 
-                                            })
+                                            });
                                         });
                                     });
                                     done();
+                                    resolve();
                                 } else {
                                     contents.forEach(function (kalimat) {
                                         insertKalimat(kalimat, bookInfo, res, function () {
@@ -223,6 +226,7 @@ var exportBookManifest = function (zipfile,contentDescriptor,bookInfo) {
                                         })
                                     });
                                     done();
+                                    resolve();
                                 }
                             });
                         });
@@ -239,31 +243,35 @@ var exportBookManifest = function (zipfile,contentDescriptor,bookInfo) {
 module.exports = epub_exporter;
 
 function epub_exporter(){
-    console.log('call')
     var api = {};
 
     var readBookInfo = function (zipfile) {
-        var contentdescriptor;
-        var rootDir;
-        xml(zipfile.readAsText('META-INF/container.xml'), function (err, result) {
-            result.container.rootfiles.forEach(function (rtfile) {
-                contentdescriptor = rtfile.rootfile[0].$['full-path'];
-                var dir = rtfile.rootfile[0].$['full-path'].split('/');
-                rootDir = dir[0];
 
+        return new Promise(function(resolve,reject){
+            var contentdescriptor;
+            var rootDir;
+            xml(zipfile.readAsText('META-INF/container.xml'), function (err, result) {
+                result.container.rootfiles.forEach(function (rtfile) {
+                    contentdescriptor = rtfile.rootfile[0].$['full-path'];
+                    var dir = rtfile.rootfile[0].$['full-path'].split('/');
+                    rootDir = dir[0];
+
+                });
             });
-        });
-        contentdescriptor = zipfile.readAsText(contentdescriptor);
-        xml(contentdescriptor, function (err, result) {
-            result.rootDir = rootDir;
-            exportBookMetadata(result).then(function (metadata) {
-                if(metadata == false)
-                    done()
-                else{
-                    return exportBookManifest(zipfile,result,metadata)
-                }
+            contentdescriptor = zipfile.readAsText(contentdescriptor);
+            xml(contentdescriptor, function (err, result) {
+                result.rootDir = rootDir;
+                exportBookMetadata(result).then(function (metadata) {
+                    if(metadata == false)
+                        return new Promise(function(resolve,reject){resolve()})
+                    else{
+                        return exportBookManifest(zipfile,result,metadata)
+                    }
+                }).then(function(){
+                    resolve()
+                })
             })
-        })
+        });
     };
 
     api.exportAll = function(){
@@ -272,15 +280,18 @@ function epub_exporter(){
             files.forEach(function (file) {
                 var filepath = path.join(__dirname, 'uploaded', file);
                 var zipfile = new zip(filepath);
-                readBookInfo(zipfile);
+                readBookInfo(zipfile)
             })
         });
     };
 
-    api.export = function(filename){
+    api.export = function(filename,cb){
+        console.log('exporting '+filename+ ' to database')
         var filelocation = path.join(__dirname,'uploaded',filename);
         var zipfile = new zip(filelocation);
-        readBookInfo(zipfile);
+        readBookInfo(zipfile).then(function(res){
+            cb()
+        });
     };
 
     return api;
