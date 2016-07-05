@@ -3,5 +3,5 @@
  */
 module.exports = {
     port : 8080,
-    db:'mongodb://localhost:27017/colabtarjem'
+    db:'mongodb://localhost:27017/collabtarjem'
 }

@@ -1,5 +1,59 @@
 //javascript for upload kitab
 $('body').Partial(function () {
+
+    var uploadKitab = function(formData,cb){
+        var progressbar = $($('#upload_progress').children()[0]);
+
+        var progessCheck = function(e){
+            if(e.lengthComputable){
+                $('#upload_progress').css('display','block');
+                progressbar.attr('aria-valuenow', e.loaded);
+                progressbar.attr('aria-valuemax', e.total);
+                progressbar.css('width',( e.loaded/ e.total )*100 +'%')
+            }
+        };
+
+        progressbar.addClass('active');
+        progressbar.addClass('progress-bar-warning');
+        progressbar.removeClass('progress-bar-success');
+        progressbar.attr('aria-valuenow', 0);
+        progressbar.attr('aria-valuemax', 100);
+        progressbar.css('width','0%');
+
+        $.ajax({
+            url: 'kitab/upload',  //Server script to process data
+            type: 'POST',
+            xhr: function() {  // Custom XMLHttpRequest
+                var myXhr = $.ajaxSettings.xhr();
+                if(myXhr.upload){ // Check if upload property exists
+                    myXhr.upload.addEventListener('progress',progessCheck, false); // For handling the progress of the upload
+                }
+                return myXhr;
+            },
+            //Ajax events
+            success: function(xhr,data){
+                progressbar.removeClass('active');
+                progressbar.removeClass('progress-bar-warning');
+                progressbar.addClass('progress-bar-success')
+                $('#upload_kitab_done').css('display','block');
+                $('#upload_kitab_cancel').css('display','none');
+
+                if(typeof cb == 'function'){
+                    cb()
+                }
+            },
+            error: function(err){
+                console.log(err)
+            },
+            // Form data
+            data: formData,
+            //Options to tell jQuery not to process data or worry about content-type.
+            cache: false,
+            contentType: false,
+            processData: false
+        });
+    };
+
     $('#login-popup').click(function(){
         $('#login_panel').modal();
     });
@@ -33,6 +87,9 @@ $('body').Partial(function () {
                             progressbar.removeClass('active');
                             progressbar.removeClass('progress-bar-warning');
                             progressbar.addClass('progress-bar-success')
+                            $('#upload_kitab_done').css('display','block');
+                            $('#upload_kitab_cancel').css('display','none');
+
                         }
                     });
             }else{
@@ -69,56 +126,9 @@ $('body').Partial(function () {
     });
 
     $('#upload_file').click(function(){
-
         var formData = new FormData();
-        //console.log(formData);
-
-        var progessCheck = function(e){
-            if(e.lengthComputable){
-                var progressbar = $($('#upload_progress').children()[0]);
-                $('#upload_progress').css('display','block');
-                progressbar.attr('aria-valuenow', e.loaded);
-                progressbar.attr('aria-valuemax', e.total);
-                progressbar.css('width',( e.loaded/ e.total )*100 +'%')
-                if(e.loaded == e.total){
-                    progressbar.removeClass('active');
-                    progressbar.removeClass('progress-bar-warning');
-                    progressbar.addClass('progress-bar-success')
-
-                }else{
-                    progressbar.addClass('active');
-                    progressbar.addClass('progress-bar-warning');
-                    progressbar.removeClass('progress-bar-success')
-                }
-            }
-        };
-
         formData.append("epub", $('#theFile').prop('files')[0]);
-
-        $.ajax({
-            url: 'kitab/upload',  //Server script to process data
-            type: 'POST',
-            xhr: function() {  // Custom XMLHttpRequest
-                var myXhr = $.ajaxSettings.xhr();
-                if(myXhr.upload){ // Check if upload property exists
-                    myXhr.upload.addEventListener('progress',progessCheck, false); // For handling the progress of the upload
-                }
-                return myXhr;
-            },
-            //Ajax events
-            success: function(xhr,data){
-
-            },
-            error: function(err){
-                console.log(err)
-            },
-            // Form data
-            data: formData,
-            //Options to tell jQuery not to process data or worry about content-type.
-            cache: false,
-            contentType: false,
-            processData: false
-        });
+        uploadKitab(formData);
     });
 
     $('#upload_form').on(
@@ -139,6 +149,18 @@ $('body').Partial(function () {
         }
     );
 
+    $('#upload_kitab_done, #upload_kitab_cancel').click(function(){
+        $('#upload_kitab_done').css('display','none');
+        $('#upload_kitab_cancel').css('display','block');
+        $('#upload_progress').css('display','none');
+        $('#theFile').val('');
+        $('#upload_file').attr('disabled','disabled');
+        $('#filename').val();
+        $('#upload_shamela_error').html('');
+        $('#upload_error').html('');
+        $('#upload_drop_zone').css('display','none');
+    });
+
     $('#upload_form').on(
         'drop',
         function(e){
@@ -146,8 +168,11 @@ $('body').Partial(function () {
                 if(e.originalEvent.dataTransfer.files.length) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log(e.originalEvent.dataTransfer.files);
-                    $('#upload_drop_zone').css('display','none');
+                    var formData = new FormData();
+                    formData.append("epub", e.originalEvent.dataTransfer.files[0]);
+                    uploadKitab(formData, function(){
+                        $('#upload_drop_zone').css('display','none');
+                    });
                 }
             }
         }

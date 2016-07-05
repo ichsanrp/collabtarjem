@@ -21,7 +21,14 @@ kitab.upload = function(req, res){
         file.pipe(fstream);
         fstream.on('close', function () {
             console.log("Upload Finished of " + filename);
-            res.redirect('back');           //where to go next
+            epub_exporter.export(filename,function(){
+                console.log('success')
+                res.send({success:true});
+                //fs.unlink(path.join(__dirname,'../uploaded',filename),function(err){
+                //    if(!err)
+                //        res.send({success:true});
+                //})
+            });
         });
     });
 };
@@ -54,10 +61,11 @@ kitab.uploadFromShamela = function(req, res) {
                             console.log("Upload Finished of " + filename);
                             epub_exporter.export(filename,function(){
                                 console.log('success')
-                                fs.unlink(path.join(__dirname,'../uploaded',filename),function(err){
-                                    if(!err)
-                                        res.send({success:true});
-                                })
+                                res.send({success:true});
+                                //fs.unlink(path.join(__dirname,'../uploaded',filename),function(err){
+                                //    if(!err)
+                                //        res.send({success:true});
+                                //})
                             });
                         });
                     }
@@ -113,9 +121,12 @@ kitab.getPage = function(req,res){
         var kitab = req.params.kitab|| 0;
         var language = req.params.language|| 'ar';
         db.collection('page').find({book:objectId(kitab)}).limit(1).skip(page).next(function(err,result){
+            console.log(result._id)
             db.collection('kalimat').find({page:objectId(result._id),book:objectId(kitab),language:language}).toArray(function(err,kalimats){
-                if(!err){
+                if(!err && kalimats != null){
                     res.send(kalimats);
+                }else{
+                    res.send('cannot find page content');
                 }
             })
         })

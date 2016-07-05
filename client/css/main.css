@@ -67,3 +67,6 @@
     display: none;
 }
 
+phrase {
+    display: inline-block;
+}

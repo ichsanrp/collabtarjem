@@ -8,22 +8,13 @@ var config = require('./config');
 var crypto = require('crypto');
 var MsTranslator = require('mstranslator');
 
+
 var msTranslatorClient = new MsTranslator({
     client_id: "colabtarjem"
     , client_secret: "9uDMJOyZd2qF9k+jVrNAvVn+dYGDFoWgXP7LiKZpOiA="
 }, true);
 
-var MongoClient = require('mongodb').MongoClient;
-executeDb = function(handler){
-    MongoClient.connect(config.db, function(err, db) {
-        if(!err)
-            handler(db,function(){
-                db.close();
-            });
-    });
-};
-
-function checksum (str, algorithm, encoding) {
+function checksum(str, algorithm, encoding) {
     return crypto
         .createHash(algorithm || 'md5')
         .update(str, 'utf8')
@@ -66,7 +57,8 @@ var exportBookMetadata = function (contentdescriptor) {
     });
 };
 
-var exportBookManifest = function (zipfile,contentDescriptor,bookInfo) {
+
+var exportBookManifest = function (zipfile, contentDescriptor, bookInfo) {
 
     return new Promise(function (resolve, reject) {
         var maxTranslate = -1;
@@ -74,84 +66,42 @@ var exportBookManifest = function (zipfile,contentDescriptor,bookInfo) {
 
         var manifest = contentDescriptor.package.manifest[0];
 
-        var insertPage = function(page, cb){
-            executeDb(function (db, done) {
+        var insertPage = function (page, db) {
+
+            return new Promise(function (resolve, reject) {
                 db.collection('page').insertOne(page, function (err, result) {
                     if (err) {
                         throw err;
+                        reject();
                     }
                     else {
                         page._id = result.insertedId;
-                        cb(page);
-                        done();
+                        resolve(page);
                     }
                 });
             });
         };
 
-        var insertTranslation = function(kalimat, to){
-            var params = {
-                text: kalimat.text
-                , from: kalimat.language
-                , to: to
-            };
-
-            //check if kalimat already has translation
-            if(kalimat.translation[to] == null || kalimat.translation[to] == undefined){
-                msTranslatorClient.translate(params, function(err, translation) {
-                    console.log(translation);
-                    if(!err){
-                        var newid = objectId();
-                        var translateTranslator = kalimat.translation;
-                        translateTranslator[kalimat.language] = kalimat._id;
-                        translateTranslator[to] = newid;
-
-                        executeDb(function (db, done) {
-                            db.collection('kalimat').insertOne({
-                                _id:newid,
-                                language:to,
-                                text:translation,
-                                page:kalimat.page,
-                                book:kalimat.book,
-                                identity:checksum(translation, 'sha1'),
-                                translation:translateTranslator
-                            },function(err,result){
-                                done();
-                            });
-                        });
-
-                        executeDb(function (db, done) {
-                            db.collection('kalimat').updateOne(
-                                {_id: objectId(kalimat._id)},
-                                {$set: {translation: translateTranslator}},
-                                function(err,result){
-                                    done();
-                                }
-                            );
-                        });
-                    }
-                });
-            }
-        };
-
-        var insertKalimat = function(kalimat,book,page,cb){
-            executeDb(function (db, done) {
+        var insertKalimat = function (kalimat, book, page, db) {
+            return new Promise(function (resolve, reject) {
                 db.collection('kalimat').find({
                     page: objectId(page._id),
                     book: objectId(book._id),
-                    identity: checksum(kalimat, 'sha1')
+                    identity: checksum(kalimat.text, 'sha1')
                 }).limit(1).next(function (err, doc) {
                     if (doc == null) {
                         db.collection('kalimat').insertOne({
                             translation: {},
-                            text: kalimat,
+                            text: kalimat.text,
+                            type: kalimat.type,
                             language: 'ar',
                             page: page._id,
                             book: book._id,
-                            identity: checksum(kalimat, 'sha1')
+                            identity: checksum(kalimat.text, 'sha1')
                         }, function (err, result) {
                             if (err) {
                                 throw err;
+                                reject();
                             }
                             else {
                                 //disabling auto translate
@@ -175,79 +125,104 @@ var exportBookManifest = function (zipfile,contentDescriptor,bookInfo) {
                                 //    cb(doc);
                                 //    done();
                                 //})
-                                done();
+                                resolve();
                             }
                         })
                     } else {
                         //insertTranslation(doc, 'id');
-                        done();
+                        resolve();
                     }
                 });
             });
         };
 
-        manifest.item.forEach(function (record) {
-            if (record.$['media-type'] == 'application/xhtml+xml') {
+        var extractContent = function (content) {
+            var bookcontaineridx = content.indexOf('id="book-container"');
+            var start = bookcontaineridx + 26
+            var end = content.indexOf('</div>', start);
 
-                var content = zipfile.readAsText(contentDescriptor.rootDir +'/'+record.$['href']);
-                xml(content,function(err,result){
-                    if(result.html.body[0].div[0].$.id == 'book-container'){
-                        var contents = [];
-                        var contentsdot =result.html.body[0].div[0]._.split('.')
-                        contentsdot.forEach(function(ctndt){
-                            ctndt.split('،').forEach(function(ctncm){
-                                contents.push(ctncm)
-                            })
-                        });
+            return content.substring(start, end);
+        };
 
-                        executeDb(function (db, done) {
+        var parsingPage = function (record, db) {
+            return new Promise(function (resolve, reject) {
+                var content = zipfile.readAsText(contentDescriptor.rootDir + '/' + record.$['href']);
+                var result = extractContent(content);
+                var contents = [];
+                var contentsdot = result.split('.');
 
-                            db.collection('page').find({identity: checksum(record.$['id'], 'sha1')}).limit(1).next(function (err, res) {
-                                if (res == null) {
-                                    var page = {
-                                        'name': record.$['id'],
-                                        'path': record.$['href'],
-                                        'book': bookInfo._id,
-                                        'identity': checksum(record.$['id'], 'sha1')
-                                    };
-                                    insertPage(page, function (newPage) {
-                                        contents.forEach(function (kalimat) {
-                                            insertKalimat(kalimat, bookInfo, newPage, function () {
+                contentsdot.forEach(function (sentence) {
 
-                                            });
-                                        });
-                                    });
-                                    done();
-                                    resolve();
-                                } else {
-                                    contents.forEach(function (kalimat) {
-                                        insertKalimat(kalimat, bookInfo, res, function () {
+                    var sentences = sentence.split('،');
 
-                                        })
-                                    });
-                                    done();
-                                    resolve();
-                                }
-                            });
-                        });
+                    for (var l = 0; l < sentences.length; l++) {
+                        if (l != (sentences.length - 1))
+                            contents.push({text: sentences[l], type: 'mid_sentence'})
+                        else
+                            contents.push({text: sentences[l], type: 'end_sentence'})
                     }
                 });
 
-            }
+                db.collection('page').find({
+                    book: objectId(bookInfo._id),
+                    identity: checksum(record.$['id'], 'sha1')
+                }).limit(1).next(function (err, res) {
+                    if(err) throw err;
+                    if (res == null) {
+                        var page = {
+                            'name': record.$['id'],
+                            'path': record.$['href'],
+                            'book': bookInfo._id,
+                            'identity': checksum(record.$['id'], 'sha1')
+                        };
+
+                        insertPage(page, db).then(function (newPage) {
+                            var kalimatInsertOperation = [];
+                            contents.forEach(function (kalimat) {
+                                kalimatInsertOperation.push(insertKalimat(kalimat, bookInfo, newPage, db));
+                            });
+                            Promise.all(kalimatInsertOperation).then(function () {
+                                resolve();
+                            })
+                        })
+                    } else {
+                        var kalimatInsertOperation = [];
+                        contents.forEach(function (kalimat) {
+                            kalimatInsertOperation.push(insertKalimat(kalimat, bookInfo, res, db));
+                        });
+                        Promise.all(kalimatInsertOperation).then(function () {
+                            resolve();
+                        });
+                    }
+                });
+            });
+        }
+
+
+        executeDb(function(db,done){
+            var parsePageOperation = []
+            manifest.item.forEach(function (record) {
+                if (record.$['media-type'] == 'application/xhtml+xml') {
+                    parsePageOperation.push(parsingPage(record,db))
+                }
+            });
+
+            Promise.all(parsePageOperation).then(function(){
+                done();
+                resolve();
+            })
         });
-
-
     });
 };
 
 module.exports = epub_exporter;
 
-function epub_exporter(){
+function epub_exporter() {
     var api = {};
 
     var readBookInfo = function (zipfile) {
 
-        return new Promise(function(resolve,reject){
+        return new Promise(function (resolve, reject) {
             var contentdescriptor;
             var rootDir;
             xml(zipfile.readAsText('META-INF/container.xml'), function (err, result) {
@@ -262,19 +237,21 @@ function epub_exporter(){
             xml(contentdescriptor, function (err, result) {
                 result.rootDir = rootDir;
                 exportBookMetadata(result).then(function (metadata) {
-                    if(metadata == false)
-                        return new Promise(function(resolve,reject){resolve()})
-                    else{
-                        return exportBookManifest(zipfile,result,metadata)
+                    if (metadata == false)
+                        return new Promise(function (resolve, reject) {
+                            resolve()
+                        })
+                    else {
+                        return exportBookManifest(zipfile, result, metadata)
                     }
-                }).then(function(){
+                }).then(function () {
                     resolve()
                 })
             })
         });
     };
 
-    api.exportAll = function(){
+    api.exportAll = function () {
 
         fs.readdir(path.join(__dirname, 'uploaded'), function (err, files) {
             files.forEach(function (file) {
@@ -285,13 +262,57 @@ function epub_exporter(){
         });
     };
 
-    api.export = function(filename,cb){
-        console.log('exporting '+filename+ ' to database')
-        var filelocation = path.join(__dirname,'uploaded',filename);
+    api.export = function (filename, cb) {
+        console.log('exporting ' + filename + ' to database')
+        var filelocation = path.join(__dirname, 'uploaded', filename);
         var zipfile = new zip(filelocation);
-        readBookInfo(zipfile).then(function(res){
+        readBookInfo(zipfile).then(function (res) {
             cb()
         });
+    };
+
+    api.insertTranslation = function (kalimat, to) {
+        var params = {
+            text: kalimat.text
+            , from: kalimat.language
+            , to: to
+        };
+
+        //check if kalimat already has translation
+        if (kalimat.translation[to] == null || kalimat.translation[to] == undefined) {
+            msTranslatorClient.translate(params, function (err, translation) {
+                if (!err) {
+                    var newid = objectId();
+                    var translateTranslator = kalimat.translation;
+                    translateTranslator[kalimat.language] = kalimat._id;
+                    translateTranslator[to] = newid;
+
+                    executeDb(function (db, done) {
+                        db.collection('kalimat').insertOne({
+                            _id: newid,
+                            language: to,
+                            text: translation,
+                            page: kalimat.page,
+                            book: kalimat.book,
+                            identity: checksum(translation, 'sha1'),
+                            translation: translateTranslator
+                        }, function (err, result) {
+                            done();
+                        });
+                    });
+
+                    executeDb(function (db, done) {
+                        db.collection('kalimat').updateOne(
+                            {_id: objectId(kalimat._id)},
+                            {$set: {translation: translateTranslator}},
+                            function (err, result) {
+                                done();
+                            }
+                        );
+                    });
+                }
+            });
+        }
     };
 
     return api;

@@ -46,15 +46,40 @@ $(function () {
                     var container = $('#original_content');
                     container.html('');
                     data.forEach(function(kalimat){
-                        container.append($('<p>'+kalimat.text+'</p>'))
+                        var phrase = $('<phrase phrase_id="'+kalimat._id+'">'+kalimat.text+'</phrase>');
+                        if(kalimat.type == 'mid_sentence')
+                            phrase.html(phrase.html()+',');
+                        else if(kalimat.type == 'end_sentence'){
+                            phrase.html(phrase.html()+'.');
+                        }
+
+                        phrase.mouseover(function(){
+                            $(this).css('background-color','#fdf5ce')
+                        }).mouseleave(function(){
+                            $(this).css('background-color','#ffffff')
+                        }).css('cursor','pointer')
+
+                        container.append(phrase)
                     })
                 })
 
                 $.get('/kitab/getPage/'+kitab._id+'/'+page+'/id',function(data){
                     var container = $('#translated_content');
                     container.html('');
+
                     data.forEach(function(kalimat){
-                        container.append($('<p>'+kalimat.text+'</p>'))
+                        var phrase = $('<phrase phrase_id="'+kalimat._id+'">'+kalimat.text+'</phrase>');
+                        if(kalimat.type == 'mid_sentence')
+                            phrase.html(phrase.html+',');
+                        else if(kalimat.type == 'end_sentence'){
+                            phrase.html(phrase.html+'.');
+                        }
+
+                        phrase.mouseover(function(){
+                            $(this).css('background-color','#fdf5ce')
+                        }).mouseleave(function(){
+                            $(this).css('background-color','#ffffff')
+                        })
                     })
                 })
             }
