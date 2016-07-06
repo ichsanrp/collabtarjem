@@ -9,7 +9,16 @@ var fs          = require('fs');
 var path        = require('path');
 var config = require('./config');
 var busboy = require('connect-busboy');
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
+const NodeRSA = require('node-rsa');
 var app = express();
+app.use(session({
+    secret: config.session_secret,
+    store: new MongoStore({ url: config.db}),
+    resave:false,
+    saveUninitialized:false
+}));
 
 app.use(compression());
 app.use(bodyParser.json());
@@ -28,6 +37,39 @@ executeDb = function(handler){
     });
 };
 
+var loginAuth = function(req,res,next){
+    var session = req.session;
+    if(session.isLogged == null || session.isLogged == undefined || !session.isLogged){
+        res.status(401).end();
+    }else
+        next();
+};
+
+var RoleAuth = function(role){
+    return function (req,res,next){
+        var session = req.session;
+        if(session.role == undefined || session.role == null){
+            res.status(403).end();
+        }else{
+            if(typeof role == 'object'){
+                var check = role.find(function(data){
+                    return data == session.role;
+                })
+                if(check == undefined){
+                    res.status(403).end();
+                }else{
+                    next();
+                }
+            }else if(typeof role == 'string'){
+                if(role == session.role){
+                    next()
+                }else{
+                    res.status(403).end();
+                }
+            }
+        }
+    }
+};
 
 function controllerHook(){
     return new Promise(function(resolve,reject){
@@ -39,30 +81,40 @@ function controllerHook(){
                 methods.forEach(function(methodname){
                     if(controller['settings'][methodname] != undefined)
                     {
-                        var handlingParams = function(paramsconfig,method,route){
+                        var bindAPI = function(settings,method,route){
                             var params = '';
-                            if(controller['settings'][methodname].hasOwnProperty('params')){
-                                paramsconfig.forEach(function(param){
+                            var addAuthMiddleware = function(param){
+                                if(settings.hasOwnProperty('registered_user')) {
+                                    var registered_user = controller['settings'][methodname]['registered-user'];
+                                    if(registered_user){
+                                        app.use(route+param,loginAuth);
+                                    }
+                                }
+
+                                if(settings.hasOwnProperty('role')){
+                                    app.use(route+param,RoleAuth(controller['settings'][methodname]['role']));
+                                }
+                            };
+
+                            addAuthMiddleware(params);
+                            app[method](route+params,controller[methodname]);
+
+                            console.log('setting '+method+' to '+route+params);
+
+                            if(settings.hasOwnProperty('params')){
+                                settings.params.forEach(function(param){
                                     params += '/:'+param;
+                                    addAuthMiddleware(params);
                                     app[method](route+params,controller[methodname])
                                     console.log('setting '+method+' to '+route+params);
                                 })
                             }
                         };
+
                         if(controller['settings'][methodname].hasOwnProperty('method')){
-                            //handling without params
-                            app[controller['settings'][methodname]['method'].toLowerCase()]('/'+controllername+'/'+methodname,controller[methodname])
-                            if(controller['settings'][methodname].hasOwnProperty('params')){
-                                handlingParams(controller['settings'][methodname]['params'],controller['settings'][methodname]['method'].toLowerCase(),'/'+controllername+'/'+methodname);
-                            }
-                            console.log('setting '+controller['settings'][methodname]['method']+' to '+'/'+controllername+'/'+methodname);
+                                bindAPI(controller['settings'][methodname],controller['settings'][methodname]['method'].toLowerCase(),'/'+controllername+'/'+methodname);
                         }else{
-                            var params = '';
-                            if(controller['settings'][methodname].hasOwnProperty('params')){
-                                handlingParams(controller['settings'][methodname]['params'],'all','/'+controllername+'/'+methodname);
-                            }
-                            app.all('/'+controllername+'/'+methodname, controller[methodname]);
-                            console.log('setting all to '+'/'+controllername+'/'+methodname);
+                                bindAPI(controller['settings'][methodname],'all','/'+controllername+'/'+methodname);
                         }
                     }else{
                         //no method name, use get as default

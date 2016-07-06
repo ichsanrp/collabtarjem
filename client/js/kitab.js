@@ -32,14 +32,12 @@ $(function () {
         };
 
         var selectKitab = function(kitab){
-          //original_total_pages
             $.get('/kitab/totalPage/'+kitab._id,function(data){
                 $('#original_total_pages').html('/ '+data.page);
                 $('#original_current_page').val(1);
                 $('#translated_total_pages').html('/ '+data.page);
                 $('#translated_current_page').val(1);
             })
-            //original_content
 
             var getKalimat = function(page){
                 $.get('/kitab/getPage/'+kitab._id+'/'+page,function(data){
@@ -48,9 +46,9 @@ $(function () {
                     data.forEach(function(kalimat){
                         var phrase = $('<phrase phrase_id="'+kalimat._id+'">'+kalimat.text+'</phrase>');
                         if(kalimat.type == 'mid_sentence')
-                            phrase.html(phrase.html()+',');
+                            phrase.html(phrase.html()+', &nbsp');
                         else if(kalimat.type == 'end_sentence'){
-                            phrase.html(phrase.html()+'.');
+                            phrase.html(phrase.html()+'. &nbsp');
                         }
 
                         phrase.mouseover(function(){
@@ -61,7 +59,7 @@ $(function () {
 
                         container.append(phrase)
                     })
-                })
+                });
 
                 $.get('/kitab/getPage/'+kitab._id+'/'+page+'/id',function(data){
                     var container = $('#translated_content');

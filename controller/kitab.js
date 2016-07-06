@@ -8,7 +8,8 @@ var kitab = {};
 kitab.settings = {};
 
 kitab.settings.upload = {
-    method:'post'
+    method:'post',
+    registered_user:true
 };
 
 kitab.upload = function(req, res){
@@ -34,7 +35,8 @@ kitab.upload = function(req, res){
 };
 
 kitab.settings.uploadFromShamela = {
-    method:'post'
+    method:'post',
+    registered_user:true
 };
 
 kitab.uploadFromShamela = function(req, res) {
@@ -113,7 +115,8 @@ kitab.find = function(req,res){
 
 kitab.settings.getPage = {
     method:'get',
-    params:['kitab','page','language']
+    params:['kitab','page','language'],
+
 };
 kitab.getPage = function(req,res){
     executeDb(function (db, done) {
@@ -121,7 +124,6 @@ kitab.getPage = function(req,res){
         var kitab = req.params.kitab|| 0;
         var language = req.params.language|| 'ar';
         db.collection('page').find({book:objectId(kitab)}).limit(1).skip(page).next(function(err,result){
-            console.log(result._id)
             db.collection('kalimat').find({page:objectId(result._id),book:objectId(kitab),language:language}).toArray(function(err,kalimats){
                 if(!err && kalimats != null){
                     res.send(kalimats);

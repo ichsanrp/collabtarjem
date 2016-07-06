@@ -1,10 +1,8 @@
 var zip = require('adm-zip');
 var fs = require('fs');
 var xml = require('xml2js').parseString;
-var mongoclient = require('mongodb').MongoClient;
 var objectId = require('mongodb').ObjectID;
 var path = require('path');
-var config = require('./config');
 var crypto = require('crypto');
 var MsTranslator = require('mstranslator');
 
@@ -156,10 +154,28 @@ var exportBookManifest = function (zipfile, contentDescriptor, bookInfo) {
                     var sentences = sentence.split('،');
 
                     for (var l = 0; l < sentences.length; l++) {
+
+                        var nowhitespace = sentences[l].replace(' ','');
+                        var noLineBreak = nowhitespace.split(/\<br\>|\<br\/\>|\<br \/\>/);
+
                         if (l != (sentences.length - 1))
-                            contents.push({text: sentences[l], type: 'mid_sentence'})
+                        {
+                            for(var f =0;f<noLineBreak.length;f++){
+                                if(f % 2 == 0)
+                                    contents.push({text: noLineBreak[f], type: 'line_break'})
+                                else
+                                    contents.push({text: noLineBreak[f], type: 'mid_sentence'})
+                            }
+                        }
                         else
-                            contents.push({text: sentences[l], type: 'end_sentence'})
+                        {
+                            for(var f =0;f<noLineBreak.length;f++){
+                                if(f % 2 == 0)
+                                    contents.push({text: noLineBreak[f], type: 'line_break'})
+                                else
+                                    contents.push({text: noLineBreak[f], type: 'end_sentence'})
+                            }
+                        }
                     }
                 });
 
