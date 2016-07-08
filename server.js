@@ -4,14 +4,12 @@ var https        = require("https");
 var bodyParser  = require('body-parser');
 var compression = require('compression');
 var io   = require('socket.io');
-var request     = require('request');
 var fs          = require('fs');
 var path        = require('path');
 var config = require('./config');
 var busboy = require('connect-busboy');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
-const NodeRSA = require('node-rsa');
 var app = express();
 app.use(session({
     secret: config.session_secret,
@@ -96,7 +94,16 @@ function controllerHook(){
                                 }
                             };
 
+                            var addMiddleware = function(param){
+                                if(settings.hasOwnProperty('middleware')){
+                                    settings.middleware.forEach(function(middleware){
+                                        app.use(route+param,middleware);
+                                    })
+                                }
+                            };
+
                             addAuthMiddleware(params);
+                            addMiddleware(params);
                             app[method](route+params,controller[methodname]);
 
                             console.log('setting '+method+' to '+route+params);
@@ -105,6 +112,7 @@ function controllerHook(){
                                 settings.params.forEach(function(param){
                                     params += '/:'+param;
                                     addAuthMiddleware(params);
+                                    addMiddleware(params);
                                     app[method](route+params,controller[methodname])
                                     console.log('setting '+method+' to '+route+params);
                                 })
@@ -135,7 +143,8 @@ controllerHook().then(function(){
 
     var httpServer = http.createServer(app);
     var socket = io(httpServer);
-    httpServer.listen(config.port, function(){
+    httpServer.listen(config.port, function(err){
+        if(err) throw err
         console.log('listen to port : ' + config.port)
     });
 });

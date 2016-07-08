@@ -61,7 +61,11 @@ user.register = function(req,res){
     emailver.update(username);
     emailver = emailver.digest('hex');
 
+    //check username and email unique
+
     executerDb(function (db,done){
+        //creating index
+        db.collection('user').createIndex( { email: 1 , username:1},{unique:true} );
         db.collection('user').insertOne({
             username:username,
             password:password,
@@ -70,13 +74,13 @@ user.register = function(req,res){
             role:'basic',
             status:'notConfirmEmail',
             emailVerificationCode:emailver
-        }).limit(1).next(function(err,user){
+        }, function (err,result) {
             if(err) throw err;
             if(user != null){
                 res.status(200).end();
                 done()
             }
-        })
+        });
     });
 };
 
