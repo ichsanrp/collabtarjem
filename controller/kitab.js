@@ -171,7 +171,7 @@ kitab.getTranslation = function(req,res){
                         })
                 }else
                 {
-                    res.send('translation not found')
+                    res.send(result)
                 }
             }else {
                 res.send('params not satisfied')

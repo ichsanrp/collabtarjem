@@ -1,6 +1,9 @@
 var objectId = require('mongodb').ObjectId;
 var crypto = require('crypto');
+var request = require('request');
 var config = require('../config');
+var fb_parser = require('fb-signed-parser');
+
 user = {};
 user.settings = {};
 
@@ -35,6 +38,57 @@ user.login = function(req,res){
             }
         })
     });
+};
+
+user.settings.loginWithGoogle = {
+    method:'post'
+};
+
+user.loginWithGoogle = function(req,res) {
+    var token = req.body.token;
+    request('https://www.googleapis.com/oauth2/v3/tokeninfo?id_token='+token,function(err,response,body){
+        var data = JSON.parse(body);
+        req.session.isLogged = true;
+        req.session.role = 'basic';
+        req.session.authType = 'google';
+        req.session.access_token = token;
+        req.session.username = data.name;
+        if(config.google_app_client_id == data.aud){
+            res.status(200).end();
+        }
+    })
+};
+
+user.settings.loggedWithGoogle = {
+    method:'get'
+};
+user.loggedWithGoogle = function(req,res) {
+    if(req.session.authType == 'google')
+        res.send({isLogged:true,token:req.session.access_token});
+    else
+        res.send({isLogged:false});
+};
+
+
+user.settings.loginWithFacebook = {
+    method:'post'
+};
+
+user.loginWithFacebook = function(req,res){
+    var authRespons =req.body.authResponse;
+    var data = fb_parser.parse(authRespons.signedRequest,config.facebook_app_secret);
+    if(data != null)
+    {
+        req.session.isLogged = true;
+        req.session.role = 'basic';
+        req.session.username = data.user_id;
+        req.session.authType = 'facebook';
+        //TODO: save user to database
+
+        res.status(200).end();
+    }else{
+        res.status(403).end();
+    }
 };
 
 user.settings.logout = {

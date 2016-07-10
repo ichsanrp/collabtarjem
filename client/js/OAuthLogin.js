@@ -47,8 +47,34 @@
                              * client.
                              */
                             self.googleAuthAPI = gapi.auth2.init({
-                                client_id: self.googleAppId
+                                client_id: self.googleAppId,
+                                scope: 'profile'
                             });
+
+                            self.googleAuthAPI.isSignedIn.listen(self.statusChange);
+
+                            // Listen for changes to current user.
+                            self.googleAuthAPI.currentUser.listen(self.statusChange)
+
+                            $.get('/user/loggedWithGoogle', function(data){
+                               if(data.isLogged){
+                                   $.get('https://www.googleapis.com/oauth2/v3/tokeninfo?id_token='+data.token,function(response){
+                                       response.type = 'google';
+                                       response.fromToken = true;
+                                       self.statusChange(response)
+                                   });
+                                   //var options = new gapi.auth2.SigninOptionsBuilder();
+                                   //options.setPrompt('none');
+                                   //options.setScope('profile').setScope('email');
+                                   //self.googleAuthAPI.signIn(options.get());
+                                   //already logged with google just request access token
+                               }
+
+                            });
+
+                            if (self.googleAuthAPI.isSignedIn.get() == true) {
+
+                            };
 
                             // Attach the click handler to the sign-in button
                             self.googleAuthAPI.attachClickHandler(self.googleButton, {}, onSuccess, onFailure);
@@ -59,9 +85,9 @@
                      * Handle successful sign-ins.
                      */
                     var onSuccess = function(user) {
-                        var data = user.getBasicProfile();
-                        data.type = 'google';
-                        self.statusChange(data)
+                        user.type = 'google';
+                        user.fromToken = false;
+                        self.statusChange(user)
                     };
 
                     /**
@@ -125,19 +151,32 @@
                 }
             }else if(response.type == 'google')
             {
-                this.isLogged =  self.googleAuthAPI.isSignedIn.hg;
-                var user =  self.googleAuthAPI.currentUser.get();
-                var basicProfile = user.getBasicProfile();
-                this.userId = user.getId();
-                this.username = basicProfile.getName();
-                this.email = basicProfile.getEmail();
-                this.invokeLogged();
+                if(!response.fromToken){
+                    this.isLogged =  self.googleAuthAPI.isSignedIn.hg;
+                    var user =  self.googleAuthAPI.currentUser.get();
+                    var basicProfile = response.getBasicProfile();
+                    this.userId = user.getId();
+                    this.APIResponse = response;
+                    this.username = basicProfile.getName();
+                    this.email = basicProfile.getEmail();
+                    this.AuthType = 'google';
+                    this.invokeLogged();
+                }else{
+                    this.isLogged = true;
+                    this.username = response.name;
+                    this.email = response.email;
+                    this.userId = response.sub;
+                    this.AuthType = 'google-relogin';
+                    this.invokeLogged();
+                }
+
             }
         },
 
         invokeLogged : function(){
+            var self = this;
           this.onLoggedHandler.forEach(function(cb){
-              cb();
+              cb({type:self.AuthType,response:self.APIResponse});
           });
         },
 
@@ -145,7 +184,7 @@
             if(!this.isLogged){
                 this.onLoggedHandler.push(cb);
             }else{
-                cb(this)
+                cb({type:this.AuthType,response:this.APIResponse});
             }
         },
 

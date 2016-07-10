@@ -89,22 +89,36 @@
         </div>
     </div>
     <div id="translated">
+        <div class="col-lg-1 bg-info" style="padding: 10px;">
+            <div class="btn-group" role="group" aria-label="publish option">
+                <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="bottom"
+                        title="save"><span class="fa fa-save"/></button>
+
+            </div>
+        </div>
         <div class="col-lg-2 bg-info" style="padding: 10px;">
             <div class="input-group">
-                <input type="text" class="form-control" placeholder="page" id="translated_current_page">
+                <span class="input-group-btn">
+                        <button class="btn btn-default" type="button"><span class="fa fa-arrow-left"/></button>
+                      </span>
+                <input type="text" class="form-control" placeholder="0" id="translated_current_page">
                 <span class="input-group-addon" id="translated_total_pages">/ 201</span>
+          <span class="input-group-btn">
+                        <button class="btn btn-default" type="button"><span class="fa fa-arrow-right"/></button>
+                      </span>
             </div>
         </div>
         <div class="col-lg-3 bg-info" style="padding: 10px">
             <div class="input-group">
-                <input type="text" class="form-control" placeholder="search">
+
+                      <input type="text" class="form-control" placeholder="search">
                       <span class="input-group-btn">
                         <button class="btn btn-default" type="button"><span class="fa fa-search"/></button>
                       </span>
             </div>
         </div>
 
-        <div class="col-lg-7 bg-info" style="padding: 10px">
+        <div class="col-lg-6 bg-info" style="padding: 10px">
             <div class="btn-toolbar navbar-right" style="margin-right: 15px" role="toolbar" aria-label="Toolbar">
                 <div class="btn-group" role="group" aria-label="publish option">
                     <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="bottom"

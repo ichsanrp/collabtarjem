@@ -37,12 +37,73 @@ $(function () {
                 $('#original_current_page').val(1);
                 $('#translated_total_pages').html('/ '+data.page);
                 $('#translated_current_page').val(1);
-            })
+            });
+
+            var getTranslation = function(kalimats,langugage){
+                var lang = langugage || 'id';
+                var translatedContainer = $('#translated_content');
+                translatedContainer.html('');
+
+                var getTranslationAsync = function(originalKalimat){
+                    return new Promise(function(resolve,reject){
+                        $.get('/kitab/getTranslation/'+originalKalimat._id+'/'+lang,function(translation){
+                            var phrase = $('<phrase translation_id="'+originalKalimat._id+'" phrase_id="'+translation._id+'">'+translation.text+'</phrase>');
+                            if(translation.type == 'mid_sentence')
+                                phrase.html(phrase.html()+', &nbsp');
+                            else if(translation.type == 'end_sentence'){
+                                phrase.html(phrase.html()+'. &nbsp');
+                            }
+
+                            phrase.mouseover(function(){
+                                $(this).addClass('hover')
+                                $('phrase[phrase_id='+originalKalimat._id+']').addClass('hover')
+                            }).mouseleave(function(){
+                                $(this).removeClass('hover')
+                                $('phrase[phrase_id='+originalKalimat._id+']').removeClass('hover')
+                            }).click(function(){
+                                translatedContainer.children().removeClass('selected').removeClass('hover');
+                                $('#original_content').children().removeClass('selected').removeClass('hover');
+                                $(this).addClass('selected')
+                                    .css('cursor','text')
+                                    .attr('contenteditable',true)
+                                    .keypress(function(e){
+                                        if(e.charCode == 13){
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            $(this).attr('edited',true)
+                                        }
+                                    });
+
+                                $('phrase[phrase_id='+originalKalimat._id+']').addClass('selected');
+                            }).css('cursor','pointer');
+
+                            translatedContainer.append(phrase);
+                            resolve();
+                        })
+                    });
+                };
+
+                var chaining = function(b,cb){
+                     return b.then(cb)
+                };
+
+                //make load in sequence
+                var i = 0, buf, j = 0;
+                var first = getTranslationAsync(kalimats[i]);
+                while(i < kalimats.length - 1){
+                    i++;
+                    buf = function(){
+                        j++;
+                        return getTranslationAsync(kalimats[j]);
+                    };
+                    first = chaining(first,buf)
+                }
+            };
 
             var getKalimat = function(page){
                 $.get('/kitab/getPage/'+kitab._id+'/'+page,function(data){
-                    var container = $('#original_content');
-                    container.html('');
+                    var originalContainer = $('#original_content');
+                    originalContainer.html('');
                     data.forEach(function(kalimat){
                         var phrase = $('<phrase phrase_id="'+kalimat._id+'">'+kalimat.text+'</phrase>');
                         if(kalimat.type == 'mid_sentence')
@@ -52,35 +113,24 @@ $(function () {
                         }
 
                         phrase.mouseover(function(){
-                            $(this).css('background-color','#fdf5ce')
+                            $(this).addClass('hover')
+                            $('phrase[translation_id='+kalimat._id+']').addClass('hover');
                         }).mouseleave(function(){
-                            $(this).css('background-color','#ffffff')
-                        }).css('cursor','pointer')
+                            $(this).removeClass('hover');
+                            $('phrase[translation_id='+kalimat._id+']').removeClass('hover');
+                        }).click(function(){
+                            originalContainer.children().removeClass('selected').removeClass('hover');
+                            $('#translated_content').children().removeClass('selected').removeClass('hover');;
+                            $(this).addClass('selected');
+                            $('phrase[translation_id='+kalimat._id+']').addClass('selected');
+                        }).css('cursor','pointer');
 
-                        container.append(phrase)
-                    })
+                        originalContainer.append(phrase);
+                    });
+
+                    getTranslation(data,'id');
                 });
-
-                $.get('/kitab/getPage/'+kitab._id+'/'+page+'/id',function(data){
-                    var container = $('#translated_content');
-                    container.html('');
-
-                    data.forEach(function(kalimat){
-                        var phrase = $('<phrase phrase_id="'+kalimat._id+'">'+kalimat.text+'</phrase>');
-                        if(kalimat.type == 'mid_sentence')
-                            phrase.html(phrase.html+',');
-                        else if(kalimat.type == 'end_sentence'){
-                            phrase.html(phrase.html+'.');
-                        }
-
-                        phrase.mouseover(function(){
-                            $(this).css('background-color','#fdf5ce')
-                        }).mouseleave(function(){
-                            $(this).css('background-color','#ffffff')
-                        })
-                    })
-                })
-            }
+            };
 
             getKalimat(1);
 

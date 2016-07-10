@@ -71,3 +71,12 @@ phrase {
     display: inline-block;
     margin-left: 3px;
 }
+
+phrase.selected{
+    background-color : #a6e1ec
+}
+
+phrase.hover{
+    background-color : #fdf5ce
+}
+
