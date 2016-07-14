@@ -7,6 +7,7 @@ var io   = require('socket.io');
 var fs          = require('fs');
 var path        = require('path');
 var config = require('./config');
+var ioadapter = require('socket.io-adapter');
 var busboy = require('connect-busboy');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
@@ -23,7 +24,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/',express.static('client'));
 app.use(busboy());
-var api = require('./api')(app);
 
 var MongoClient = require('mongodb').MongoClient;
 executeDb = function(handler){
@@ -143,9 +143,10 @@ controllerHook().then(function(){
 
     var httpServer = http.createServer(app);
     var socket = io(httpServer);
+    var translationCollab = require('./module/eventBroadcaster')(socket);
     httpServer.listen(config.port, function(err){
         if(err) throw err
-        console.log('listen to port : ' + config.port)
+            console.log('listen to port : ' + config.port)
     });
 });
 

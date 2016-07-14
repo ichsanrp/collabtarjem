@@ -24,83 +24,78 @@
             this.getFacebookSDK();
             this.getGoogleSDK();
             this.onLoggedHandler = [];
+            this.username = Date.now();
         },
         getGoogleSDK: function () {
             var self = this;
-            var js, fjs = document.getElementsByTagName('script')[0];
-            if (document.getElementById('google-jssdk')) return;
-            js = document.createElement('script');
-            js.id = 'facebook-jssdk';
-            js.src = "//apis.google.com/js/api:client.js";
-            fjs.parentNode.insertBefore(js, fjs);
+            $.getScript('http://apis.google.com/js/api:client.js',function(data){
+                $(function () {
+                    $('body').Partial(function(){
+                        self.googleAuthAPI = null;
+                        /**
+                         * Initializes the Sign-In client.
+                         */
+                        var initClient = function() {
+                            gapi.load('auth2', function(){
+                                /**
+                                 * Retrieve the singleton for the GoogleAuth library and set up the
+                                 * client.
+                                 */
+                                self.googleAuthAPI = gapi.auth2.init({
+                                    client_id: self.googleAppId,
+                                    scope: 'profile'
+                                });
 
-            $(function () {
-                $('body').Partial(function(){
-                    self.googleAuthAPI = null;
-                    /**
-                     * Initializes the Sign-In client.
-                     */
-                    var initClient = function() {
-                        gapi.load('auth2', function(){
-                            /**
-                             * Retrieve the singleton for the GoogleAuth library and set up the
-                             * client.
-                             */
-                            self.googleAuthAPI = gapi.auth2.init({
-                                client_id: self.googleAppId,
-                                scope: 'profile'
+                                self.googleAuthAPI.isSignedIn.listen(self.statusChange);
+
+                                // Listen for changes to current user.
+                                self.googleAuthAPI.currentUser.listen(self.statusChange)
+
+                                //$.get('/user/loggedWithGoogle', function(data){
+                                //    if(data.isLogged){
+                                //        $.get('https://www.googleapis.com/oauth2/v3/tokeninfo?id_token='+data.token,function(response){
+                                //            response.type = 'google';
+                                //            response.fromToken = true;
+                                //            self.statusChange(response)
+                                //        });
+                                //        //var options = new gapi.auth2.SigninOptionsBuilder();
+                                //        //options.setPrompt('none');
+                                //        //options.setScope('profile').setScope('email');
+                                //        //self.googleAuthAPI.signIn(options.get());
+                                //        //already logged with google just request access token
+                                //    }
+                                //
+                                //});
+
+                                if (self.googleAuthAPI.isSignedIn.get() == true) {
+
+                                };
+
+                                // Attach the click handler to the sign-in button
+                                self.googleAuthAPI.attachClickHandler(self.googleButton, {}, onSuccess, onFailure);
                             });
+                        };
 
-                            self.googleAuthAPI.isSignedIn.listen(self.statusChange);
+                        /**
+                         * Handle successful sign-ins.
+                         */
+                        var onSuccess = function(user) {
+                            user.type = 'google';
+                            user.fromToken = false;
+                            self.statusChange(user)
+                        };
 
-                            // Listen for changes to current user.
-                            self.googleAuthAPI.currentUser.listen(self.statusChange)
+                        /**
+                         * Handle sign-in failures.
+                         */
+                        var onFailure = function(error) {
+                            console.log(error);
+                        };
 
-                            $.get('/user/loggedWithGoogle', function(data){
-                               if(data.isLogged){
-                                   $.get('https://www.googleapis.com/oauth2/v3/tokeninfo?id_token='+data.token,function(response){
-                                       response.type = 'google';
-                                       response.fromToken = true;
-                                       self.statusChange(response)
-                                   });
-                                   //var options = new gapi.auth2.SigninOptionsBuilder();
-                                   //options.setPrompt('none');
-                                   //options.setScope('profile').setScope('email');
-                                   //self.googleAuthAPI.signIn(options.get());
-                                   //already logged with google just request access token
-                               }
-
-                            });
-
-                            if (self.googleAuthAPI.isSignedIn.get() == true) {
-
-                            };
-
-                            // Attach the click handler to the sign-in button
-                            self.googleAuthAPI.attachClickHandler(self.googleButton, {}, onSuccess, onFailure);
-                        });
-                    };
-
-                    /**
-                     * Handle successful sign-ins.
-                     */
-                    var onSuccess = function(user) {
-                        user.type = 'google';
-                        user.fromToken = false;
-                        self.statusChange(user)
-                    };
-
-                    /**
-                     * Handle sign-in failures.
-                     */
-                    var onFailure = function(error) {
-                        console.log(error);
-                    };
-
-                    setTimeout(initClient,10)
-                })
+                        setTimeout(initClient,10)
+                    })
+                });
             });
-
         },
         getFacebookSDK: function () {
             var self = this;

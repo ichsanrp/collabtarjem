@@ -15,17 +15,33 @@
 
 #bookfinder{
     overflow-y: scroll;
-    height:calc( 100vh - 50vh - 25px - 58px );
+    height:calc( 100vh - 66vh - 25px - 58px );
+}
+
+#projectfinder{
+    overflow-y: scroll;
+    height:calc( 100vh - 66vh - 25px - 58px );
 }
 
 
-#projectfinder{
+#phrase_property{
+    height:calc( 100vh - 66vh - 25px - 58px );
+    overflow-y: scroll;
+    border-top: solid;
+    border-top-color: #999999;
+    border-top-width: thick;
+}
+
+#phrase_text{
+    direction: rtl;padding: 10px;background-color: #eeeeee; margin: 10px
+}
+
+#phrase_log{
     height:calc( 100vh - 50vh - 25px - 58px );
     overflow-y: scroll;
     border-top: solid;
     border-top-color: #999999;
     border-top-width: thick;
-    display: none;
 }
 
 
@@ -80,3 +96,10 @@ phrase.hover{
     background-color : #fdf5ce
 }
 
+phrase.remote_edit{
+    background-color : #5cb85c;
+}
+
+phrase.remote_select{
+    background-color : #98ccff;
+}

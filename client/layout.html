@@ -21,36 +21,45 @@
 
     </div>
     <div class="col-lg-12 bg-info" style="padding: 10px">
-        <div class="btn-group">
-
-            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">Translation<span class="caret"></span></button>
-            <ul class="dropdown-menu">
-                <li><a href="#">Arabic</a></li>
-                <li><a href="#">Indonesia</a></li>
-                <li><a href="#">English</a></li>
-            </ul>
-        </div>
-        <div class="btn-group">
-            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">Status<span class="caret"></span></button>
-            <ul class="dropdown-menu">
-                <li><a href="#">Ongoing</a></li>
-                <li><a href="#">Completed</a></li>
-            </ul>
-        </div>
-
-        <div class="btn-toolbar navbar-right" style="margin-right: 5px" role="toolbar" aria-label="Toolbar">
+        <div class="btn-toolbar" style="margin-right: 5px" role="toolbar" aria-label="Toolbar">
             <div class="btn-group" role="group" aria-label="publish option">
-                <button id="new_project_toolbar" type="button" class="btn btn-default" data-toggle="modal"
-                        data-target="#create_project" data-placement="bottom" title="New Project"><span
-                        class="fa fa-plus-circle"/></button>
+                <button id="create_project_button" data-toggle="modal" data-target="#create_project" data-placement="bottom" title="New Project" type="button" class="btn btn-default" >
+                    <span class="fa fa-plus" />
+                </button>
             </div>
         </div>
     </div>
-    <div id="projectfinder">
+    <div id="projectfinder" class="col-lg-12">
 
     </div>
+    <div id="phrase_property" class="col-lg-12">
+        <div id="phrase_text" >
+
+        </div>
+        <div id="phrase_log" class="col-lg-12">
+            <div class="media">
+                <div class="media-left">
+                    <button type="button" class="btn btn-default" ><span
+                            class="fa fa-check-square-o"/></button>
+                    <button type="button" class="btn btn-default" ><span
+                            class="fa fa-remove"/></button>
+                    <button type="button" class="btn btn-default" ><span
+                            class="fa fa-pencil"/></button>
+                </div>
+                <div class="media-body">
+                    <h5 class="media-heading">ini perlu diubah dikarenakan blablabla pernyataan diatas adalah contoh dari penggunaan log phrase</h5>
+                    <b>Abu Ahmad</b><br/>
+                    <i>12 agustus 2015</i>
+                </div>
+                <div class="media-right">
+                    <span class="fa fa-check-square-o" style="color: green"/>
+                    <span class="fa fa-exclamation-triangle" style="opacity: 0.3"/>
+                    <span class="fa fa-minus-circle" style="opacity: 0.3"/>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <div>

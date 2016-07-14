@@ -167,17 +167,22 @@ kitab.getTranslation = function(req,res){
                         .next(function(err, result){
                             if(!err){
                                 res.send(result);
+                                done()
                             }
                         })
                 }else
                 {
                     res.send(result)
+                    done()
                 }
             }else {
                 res.send('params not satisfied')
+                done()
             }
         })
     });
 };
+
+
 
 module.exports = kitab;

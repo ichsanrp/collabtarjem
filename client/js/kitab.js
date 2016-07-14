@@ -31,6 +31,17 @@ $(function () {
             media.find('img').replaceWith(svg);
         };
 
+        var options = {
+            namespace : 'collaboration'
+        };
+        var collaborationEvent = new eventBroadcaster(options);
+
+        options = {
+            namespace : 'project'
+        };
+
+        var projectEvent = new eventBroadcaster(options);
+
         var selectKitab = function(kitab){
             $.get('/kitab/totalPage/'+kitab._id,function(data){
                 $('#original_total_pages').html('/ '+data.page);
@@ -38,6 +49,10 @@ $(function () {
                 $('#translated_total_pages').html('/ '+data.page);
                 $('#translated_current_page').val(1);
             });
+            projectEvent.invokeLocal('kitab_selected',kitab );
+            
+
+            var Oauth = new OAuth();
 
             var getTranslation = function(kalimats,langugage){
                 var lang = langugage || 'id';
@@ -63,16 +78,31 @@ $(function () {
                             }).click(function(){
                                 translatedContainer.children().removeClass('selected').removeClass('hover');
                                 $('#original_content').children().removeClass('selected').removeClass('hover');
+                                collaborationEvent.invokeRemote('remote_select',{id:translation._id, user:Oauth.username} )
+                                collaborationEvent.invokeLocal('local_select',{id:originalKalimat._id} )
                                 $(this).addClass('selected')
                                     .css('cursor','text')
                                     .attr('contenteditable',true)
-                                    .keypress(function(e){
-                                        if(e.charCode == 13){
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            $(this).attr('edited',true)
-                                        }
+                                    .bind("DOMSubtreeModified",function(){
+                                       $(this)
+                                           .unbind('keydown')
+                                           .unbind('keyup')
+                                           .keydown(function(e){
+                                               if(e.which == 13) {
+                                                   e.preventDefault();
+                                                   e.stopPropagation();
+                                               }
+                                           })
+                                           .keyup(function(e){
+                                               if(e.keyCode == 13){
+                                                   e.preventDefault();
+                                                   e.stopPropagation();
+                                                   $(this).attr('edited',true);
+                                                   collaborationEvent.invokeRemote('modify_phrase',{text:$(this).html(),id:translation._id} )
+                                               }
+                                           });
                                     });
+
 
                                 $('phrase[phrase_id='+originalKalimat._id+']').addClass('selected');
                             }).css('cursor','pointer');
@@ -119,6 +149,8 @@ $(function () {
                             $(this).removeClass('hover');
                             $('phrase[translation_id='+kalimat._id+']').removeClass('hover');
                         }).click(function(){
+                            collaborationEvent.invokeRemote('remote_select',{id:kalimat._id, user:Oauth.username} )
+                            collaborationEvent.invokeLocal('local_select',{id:kalimat._id} )
                             originalContainer.children().removeClass('selected').removeClass('hover');
                             $('#translated_content').children().removeClass('selected').removeClass('hover');;
                             $(this).addClass('selected');
