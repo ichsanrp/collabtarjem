@@ -1,0 +1,45 @@
+<require src="js/sign-up.js"/>
+<div class="modal fade" id="sign_up_panel" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" >register to YuBacaKitab</h4>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" style="padding-left: 14px;padding-right: 14px">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <span class="input-group-addon" ><span class="fa fa-user"></span></span>
+                            <input type="email" id="sign_up_username" class="form-control" placeholder="email" aria-describedby="username">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <span class="input-group-addon" ><span class="fa fa-lock" style="width: 11px;"></span></span>
+                            <input type="password" id="sign_up_password" class="form-control" placeholder="password" aria-describedby="password">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <span class="input-group-addon" ><span class="fa fa-repeat" style="width: 11px;"></span></span>
+                            <input type="password" id="sign_up_repeat" class="form-control" placeholder="repeat password" aria-describedby="password">
+                        </div>
+                    </div>
+
+                </form>
+
+                <div id="sign_up_error" >
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="row">
+                    <div class="col-xs-4 col-md-4 pull-right">
+                        <button type="button" class="btn btn-danger" id="register">Register</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

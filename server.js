@@ -1,3 +1,4 @@
+//TODO: add ssh server
 var express = require("express");
 var http        = require("http");
 var https        = require("https");
@@ -9,6 +10,7 @@ var path        = require('path');
 var config = require('./config');
 var ioadapter = require('socket.io-adapter');
 var busboy = require('connect-busboy');
+var csurf = require('csurf')
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
 var app = express();
@@ -19,6 +21,7 @@ app.use(session({
     saveUninitialized:false
 }));
 
+app.use()
 app.use(compression());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

@@ -15,7 +15,7 @@ user.login = function(req,res){
     var username = req.body.username;
     var password = req.body.password;
 
-    executerDb(function (db,done){
+    executeDb(function (db,done){
         db.collection('user').find({username:username}).limit(1).next(function(err,user){
             if(err) throw err;
             if(user != null){
@@ -33,8 +33,8 @@ user.login = function(req,res){
                 }else{
                     res.status(403).send('email verification needed').end();
                 }
-
-
+            }else{
+                res.status(200).send({error:true,message:'username not found'}).end()
             }
         })
     });
@@ -48,12 +48,30 @@ user.loginWithGoogle = function(req,res) {
     var token = req.body.token;
     request('https://www.googleapis.com/oauth2/v3/tokeninfo?id_token='+token,function(err,response,body){
         var data = JSON.parse(body);
-        req.session.isLogged = true;
-        req.session.role = 'basic';
-        req.session.authType = 'google';
-        req.session.access_token = token;
-        req.session.username = data.name;
         if(config.google_app_client_id == data.aud){
+            req.session.isLogged = true;
+            req.session.role = 'basic';
+            req.session.authType = 'google';
+            req.session.access_token = token;
+            req.session.username = data.name;
+            executeDb(function (db,done) {
+                db.collection('user').find({username:data.sub}).limit(1).next(function (err,user) {
+                    if (err) throw err;
+                    if(user == null){
+                        db.collection('user').insertOne({
+                            username:data.sub,
+                            authType:'google',
+                            email:data.email,
+                            name:data.name,
+                            avatar:data.picture,
+                            status:'verified'
+                        }, function (err,result) {
+                            if(err) throw err;
+                        });
+
+                    }
+                })
+            });
             res.status(200).end();
         }
     })
@@ -77,13 +95,35 @@ user.settings.loginWithFacebook = {
 user.loginWithFacebook = function(req,res){
     var authRespons =req.body.authResponse;
     var data = fb_parser.parse(authRespons.signedRequest,config.facebook_app_secret);
+    console.log(req.body);
     if(data != null)
     {
         req.session.isLogged = true;
         req.session.role = 'basic';
         req.session.username = data.user_id;
         req.session.authType = 'facebook';
-        //TODO: save user to database
+        //TODO: parse user from facebook
+        
+        executeDb(function (db,done) {
+            db.collection('user').find({username:data.user_id}).limit(1).next(function (err,user) {
+                if (err) throw err;
+                if(user == null){
+                    db.collection('user').insertOne({
+                        username:data.user_id,
+                        authType:'facebook',
+                        status:'verified'
+                    }, function (err,result) {
+                        if(err) throw err;
+                        if(user != null){
+                            res.status(200).end();
+                            done()
+                        }
+                    });
+
+                }
+            })
+        });
+        
 
         res.status(200).end();
     }else{
@@ -99,42 +139,60 @@ user.logout = function(req,res){
     res.status(200).end();
 };
 
+
+var sendVerification = function () {
+    
+}
+
 user.settings.register = {
     method:'post'
 };
 user.register = function(req,res){
-    var username = req.body.username;
     var email = req.body.email;
     var password = req.body.password;
-    var gender = req.body.gender;
     var hmac = crypto.createHmac('sha256', config.password_secret);
     hmac.update(password);
     password = hmac.digest('base64');
 
     var emailver = crypto.createHmac('sha256', password);
-    emailver.update(username);
+    emailver.update(email);
     emailver = emailver.digest('hex');
 
     //check username and email unique
 
-    executerDb(function (db,done){
+    executeDb(function (db,done){
         //creating index
-        db.collection('user').createIndex( { email: 1 , username:1},{unique:true} );
-        db.collection('user').insertOne({
-            username:username,
-            password:password,
-            gender:gender,
-            email:email,
-            role:'basic',
-            status:'notConfirmEmail',
-            emailVerificationCode:emailver
-        }, function (err,result) {
-            if(err) throw err;
-            if(user != null){
-                res.status(200).end();
+        try{
+            db.collection('user').createIndex( { email: 1 , username:1},{unique:true} );
+            db.collection('user').insertOne({
+                username:email,
+                password:password,
+                role:'basic',
+                status:'notConfirmEmail',
+                emailVerificationCode:emailver
+            }, function (error) {
+                if(error){
+                    switch (error.code){
+                        case 11000 :
+                            res.status(200).send({success:false,message:'user with this email already registered'}).end();
+                            break;
+
+                        default:
+                            res.status(200).send({success:false,message:error.errmsg}).end();
+                            break;
+                    }
+                }else{
+                    if(user != null){
+                        res.status(200).send({success:true}).end();
+                    }
+                }
                 done()
-            }
-        });
+
+            });
+        }catch (e){
+            console.log(e)
+        }
+
     });
 };
 
