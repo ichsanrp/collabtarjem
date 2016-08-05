@@ -21,7 +21,6 @@ app.use(session({
     saveUninitialized:false
 }));
 
-app.use()
 app.use(compression());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
